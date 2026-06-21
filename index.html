@@ -1,0 +1,1015 @@
+﻿<!DOCTYPE html>
+<html lang="id"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek All Stok - Pencarian Pintar</title>
+    <link href="./Cek All Stok - Pencarian Pintar_files/css2" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #eff6ff;
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: #dbeafe;
+            --text-primary: #172554;
+            --text-secondary: #64748b;
+            --accent-primary: #2563eb;
+            --accent-glow: rgba(37, 99, 235, 0.22);
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(96, 165, 250, 0.28) 0px, transparent 45%),
+                radial-gradient(at 100% 0%, rgba(191, 219, 254, 0.5) 0px, transparent 45%),
+                linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0 0 12px 0;
+            background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .refresh-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 12px;
+            padding: 7px 12px;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #475569;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+        }
+
+        .refresh-status::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+        }
+
+        .refresh-status.error {
+            color: var(--danger);
+            border-color: #fecaca;
+            background: #fff7f7;
+        }
+
+        .refresh-status.error::before {
+            background: var(--danger);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            font-size: 18px;
+            color: var(--text-primary);
+            outline: none;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12), 0 0 0 4px var(--accent-glow);
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .results-info {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: #93c5fd;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.12);
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .product-card:hover::before {
+            opacity: 1;
+        }
+
+        .product-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .product-code {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .product-price {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1d4ed8;
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-buy {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: 16px;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent-primary), #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-buy:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--accent-glow);
+        }
+
+        .btn-buy:disabled {
+            background: #f1f5f9;
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .product-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            line-height: 1.5;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .product-alloc {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .alloc-item {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .alloc-val {
+            font-weight: 700;
+            color: #1d4ed8;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-available {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-empty {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--accent-primary);
+        }
+
+        .loader-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            background: var(--glass-bg);
+            border-radius: 16px;
+            border: 1px dashed var(--glass-border);
+        }
+
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .quick-filters::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .filter-btn:hover {
+            background: #eff6ff;
+            border-color: var(--accent-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-primary);
+            color: #fff;
+            border-color: var(--accent-primary);
+        }
+
+        .results-info b {
+            color: var(--text-primary) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Monitoring Stok Akrab FRCELL</h1>
+            <p>Kuota Bulanan XL/AXIS 28-30Hr Full 24 Jam Murah</p>
+            <div class="refresh-status" id="refreshStatus" role="status">Sedang memuat data...</div>
+        </div>
+
+        <div class="quick-filters" id="quickFilters">
+            <button class="filter-btn active" data-menu-id="akrab-frcell" data-search="">Akrab FRCELL</button>
+        </div>
+
+        <div class="search-box">
+            <input class="search-input" id="searchInput" type="search" placeholder="Cari nama paket, kode, area, atau kuota...">
+        </div>
+
+        <div class="results-info" id="resultsInfo"><span>Menunggu data stok...</span></div>
+
+        <div id="loader" class="loader" style="display: none;">
+            <div class="loader-spinner"></div>
+        </div>
+
+        <div class="products-grid" id="productsGrid"></div>
+    </div>
+
+<script>
+        let allProducts = [];
+        const searchInput = document.getElementById('searchInput') || document.createElement('input');
+        const productsGrid = document.getElementById('productsGrid');
+        const resultsInfo = document.getElementById('resultsInfo');
+        const loader = document.getElementById('loader');
+        const refreshStatus = document.getElementById('refreshStatus');
+        const quickFilters = document.getElementById('quickFilters');
+        const forceFallback = new URLSearchParams(window.location.search).has('fallback');
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR4CMSB_K37Dw0zTemanSPFDS-Z6wvgRRmfb1cBzfkNfRDwA6aXBPNHiy6qwRkPOdvDsa9ecwSli3ug/pub?gid=0&single=true&output=csv';
+        const FALLBACK_CSV = `kode_produk,nama_produk,Deskripsi,stok_sekarang,harga
+FR,SUPERMINI,"Area 1 : 13GB-15GB
+Area 2 : 15GB-17GB
+Area 3 : 20GB-22GB
+Area 4 : 30GB-32GB
+~ kuota Reguler 24jam
+~ Paket Akrab Official",75,55000
+FR,MINI,"Area 1 : 38GB-40GB
+Area 2 : 40GB-42GB
+Area 3 : 45GB-47GB
+Area 4 : 55GB-57GB
+~ kuota Reguler 24jam
+~ Paket Akrab Official",85,68000
+FR,BIG,"Area 1 : 33GB-36GB
+Area 2 : 36GB-40GB
+Area 3 : 47GB-50GB
+Area 4 : 71GB-74GB
+~ kuota Reguler 24jam
+~ Paket Akrab Official",90,78000
+FR,MEGABIG,"Area 1 : 63GB-65GB
+Area 2 : 65GB-67GB
+Area 3 : 70GB-72GB
+Area 4 : 80GB-82GB
+~ kuota Reguler 24jam
+~ Paket Akrab Official",80,85000
+FR,JUMBO,"Area 1 : 65GB-67GB
+Area 2 : 70GB-72GB
+Area 3 : 83GB-85GB
+Area 4 : 123GB-125GB
+~ kuota Reguler 24jam
+~ Paket Akrab Official",70,95000`;
+        let isRefreshing = false;
+        let lastSuccessfulRefresh = null;
+        const panelConfig = {
+            menus: [
+                { id: 'akrab-frcell', label: 'Akrab FRCELL', query: '', enabled: true, empty: false }
+            ]
+        };
+
+        const formatRefreshTime = (date) => {
+            return new Intl.DateTimeFormat('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).format(date);
+        };
+
+        const showRefreshSuccess = () => {
+            lastSuccessfulRefresh = new Date();
+            refreshStatus.classList.remove('error');
+            refreshStatus.textContent = `Terakhir diperbarui: ${formatRefreshTime(lastSuccessfulRefresh)} WIB`;
+        };
+
+        const showRefreshError = () => {
+            refreshStatus.classList.add('error');
+            refreshStatus.textContent = lastSuccessfulRefresh
+                ? `Refresh gagal - data terakhir ${formatRefreshTime(lastSuccessfulRefresh)} WIB`
+                : 'Refresh gagal - sistem offline';
+        };
+
+        const showFallbackStatus = () => {
+            refreshStatus.classList.add('error');
+            refreshStatus.textContent = 'Mode Lokal - Memakai Data Cadangan';
+        };
+
+        const formatRupiah = (number) => {
+            return new Intl.NumberFormat('id-ID', { 
+                style: 'currency', 
+                currency: 'IDR', 
+                minimumFractionDigits: 0 
+            }).format(number);
+        };
+
+        const extractAllGB = (text) => {
+            if (!text) return [];
+            const regex = /(\d+(?:\.\d+)?)\s*gb/gi;
+            let match;
+            const gbs = [];
+            while ((match = regex.exec(text)) !== null) {
+                gbs.push(parseFloat(match[1]));
+            }
+            return gbs;
+        };
+
+        const extractAllNumbers = (text) => {
+            if (!text) return [];
+            const match = text.match(/\b\d+(?:\.\d+)?\b/g);
+            return match ? match.map(n => parseFloat(n)) : [];
+        };
+
+        const escapeHtml = (value) => {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+
+        const getFirstValue = (row, keys) => {
+            for (const key of keys) {
+                if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== '') {
+                    return String(row[key]).trim();
+                }
+            }
+            return '';
+        };
+
+        const parseNumber = (value, fallback = 0) => {
+            if (value === undefined || value === null || value === '') return fallback;
+            const clean = String(value).replace(/[^\d,-]/g, '').replace(/\./g, '').replace(',', '.');
+            const parsed = Number(clean);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        };
+
+        const normalizeCsvRow = (row) => {
+            const normalizedRow = {};
+            Object.entries(row || {}).forEach(([key, value]) => {
+                const cleanKey = String(key).replace(/^\uFEFF/, '').trim().toLowerCase();
+                normalizedRow[cleanKey] = value;
+            });
+
+            const code = getFirstValue(normalizedRow, ['kode_produk', 'code', 'kode', 'sku']);
+            const name = getFirstValue(normalizedRow, ['nama_produk', 'name', 'nama', 'produk']);
+            const desc = getFirstValue(normalizedRow, ['deskripsi', 'desc', 'description']);
+            const rawStatus = getFirstValue(normalizedRow, ['status']).toLowerCase();
+            const price = parseNumber(getFirstValue(normalizedRow, ['harga', 'harga_final', 'price']), 0);
+            const stock = parseNumber(getFirstValue(normalizedRow, ['stok_sekarang', 'sisa_slot', 'stock', 'stok']), 0);
+
+            if (!code || !name) return null;
+
+            return {
+                kode_produk: code,
+                nama_produk: name,
+                harga_final: price,
+                price,
+                deskripsi: desc,
+                kosong: rawStatus === 'kosong' || rawStatus === 'habis' || stock <= 0 ? 1 : 0,
+                gangguan: rawStatus === 'gangguan' ? 1 : 0,
+                sisa_slot: stock,
+                menuIds: ['akrab-frcell'],
+                static_product: true
+            };
+        };
+
+        const parseCsvFallback = (csvText) => {
+            const rows = [];
+            let row = [];
+            let cell = '';
+            let inQuotes = false;
+
+            for (let index = 0; index < csvText.length; index++) {
+                const char = csvText[index];
+                const nextChar = csvText[index + 1];
+
+                if (char === '"' && inQuotes && nextChar === '"') {
+                    cell += '"';
+                    index++;
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    row.push(cell);
+                    cell = '';
+                } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                    if (char === '\r' && nextChar === '\n') index++;
+                    row.push(cell);
+                    if (row.some(value => String(value).trim() !== '')) rows.push(row);
+                    row = [];
+                    cell = '';
+                } else {
+                    cell += char;
+                }
+            }
+
+            row.push(cell);
+            if (row.some(value => String(value).trim() !== '')) rows.push(row);
+
+            const headers = (rows.shift() || []).map(header => String(header).trim());
+            return rows.map(values => {
+                const item = {};
+                headers.forEach((header, index) => {
+                    item[header] = values[index] || '';
+                });
+                return item;
+            });
+        };
+
+        const csvTextToProducts = (csvText) => {
+            const rows = window.Papa
+                ? Papa.parse(csvText, { header: true, skipEmptyLines: true }).data
+                : parseCsvFallback(csvText);
+
+            const products = (rows || [])
+                .map(normalizeCsvRow)
+                .filter(Boolean);
+
+            if (!products.length) {
+                throw new Error('CSV tidak berisi produk valid');
+            }
+
+            return products;
+        };
+
+        /* ======= LOGIKA AKOMODASI LOKAL CORs PROXY ======= */
+        const parseCsvProducts = async () => {
+             if (forceFallback) throw new Error('Forced fallback mode');
+             
+             const isLocalFile = window.location.protocol === 'file:';
+             const cacheBuster = Math.floor(Date.now() / 60000); 
+             const directUrl = `${CSV_URL}&_=${cacheBuster}`;
+             
+             let urlsToTry = [];
+             
+             if (isLocalFile) {
+                 // Jika dibuka lokal via file://, lewati directUrl karena pasti diblokir oleh CORS browser
+                 console.log("Membuka file secara lokal. Mengalihkan request otomatis lewat proxy...");
+                 urlsToTry = [
+                     `https://corsproxy.io/?${encodeURIComponent(directUrl)}`,
+                     `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`
+                 ];
+             } else {
+                 // Jika sudah di-upload ke Hosting / Server asli
+                 urlsToTry = [
+                     directUrl,
+                     `https://corsproxy.io/?${encodeURIComponent(directUrl)}`
+                 ];
+             }
+
+             let lastError = null;
+
+             for (const url of urlsToTry) {
+                 try {
+                     const controller = new AbortController();
+                     const timeoutId = setTimeout(() => controller.abort(), 8000); // Batas muat 8 detik
+
+                     const response = await fetch(url, {
+                         cache: 'no-store',
+                         signal: controller.signal
+                     });
+                     
+                     clearTimeout(timeoutId);
+                     
+                     if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+                     
+                     const text = await response.text();
+                     
+                     if (!text || text.trim().startsWith('<') || text.trim().startsWith('<!DOCTYPE')) {
+                         throw new Error('Respons terdeteksi berbentuk dokumen HTML, bukan data CSV');
+                     }
+                     
+                     return csvTextToProducts(text); 
+                 } catch (error) {
+                     console.warn(`Jalur ${url} gagal diproses:`, error.message);
+                     lastError = error;
+                 }
+             }
+
+             throw lastError || new Error('Seluruh jalur pemuatan data gagal');
+         };
+
+        const getFallbackProducts = () => {
+            return csvTextToProducts(FALLBACK_CSV);
+        };
+
+        const renderQuickFilters = () => {
+            const activeButton = quickFilters.querySelector('.filter-btn.active');
+            const activeId = activeButton ? activeButton.dataset.menuId : '';
+            const enabledMenus = panelConfig.menus.filter(menu => menu.enabled !== false);
+
+            quickFilters.innerHTML = enabledMenus.map((menu, index) => {
+                const isActive = activeId ? menu.id === activeId : index === 0;
+                const hiddenStyle = menu.hiddenByDefault ? ' style="display: none;"' : '';
+                return `<button class="filter-btn${isActive ? ' active' : ''}" data-menu-id="${escapeHtml(menu.id || '')}" data-search="${escapeHtml(menu.query || '')}" data-empty="${menu.empty ? 'true' : 'false'}"${hiddenStyle}>${escapeHtml(menu.label || 'Menu')}</button>`;
+            }).join('');
+
+            const active = quickFilters.querySelector('.filter-btn.active') || quickFilters.querySelector('.filter-btn');
+            if (active) {
+                active.classList.add('active');
+                searchInput.value = active.dataset.empty === 'true' ? '' : (active.dataset.search || '');
+            }
+        };
+
+        const isUnavailableProduct = (item) => {
+            const code = (item.kode_produk || item.code || '').toUpperCase();
+            const provider = (item.kode_provider || item.brand || '').toUpperCase();
+            const priceNum = item.harga_final || item.price || 0;
+            const isXapZeroPrice = (code.startsWith('XAP') || provider === 'XAP') && Number(priceNum) === 0;
+            const isXlapZeroSlot = code.startsWith('XLAP') && item.sisa_slot !== undefined && item.sisa_slot <= 0;
+            const isZeroPrice = !priceNum || Number(priceNum) <= 0;
+
+            let isGangguan = item.gangguan === 1 || isXapZeroPrice || isXlapZeroSlot || isZeroPrice;
+            let isKosong = item.kosong === 1 || isGangguan;
+
+            if ((code.startsWith('XDA') || code.startsWith('XAP') || code.startsWith('XLAP')) && item.sisa_slot !== undefined && item.sisa_slot <= 0) {
+                isKosong = true;
+            }
+            return isKosong || isGangguan;
+        };
+
+        const getMenuProducts = (menuId) => {
+            return allProducts
+                .filter(product => {
+                    const menuIds = Array.isArray(product.menuIds) ? product.menuIds : ['akrab-frcell'];
+                    return menuIds.includes(menuId);
+                })
+                .sort((a, b) => {
+                const priceA = a.harga_final || a.price || 0;
+                const priceB = b.harga_final || b.price || 0;
+                return priceA - priceB;
+            });
+        };
+
+        const renderCurrentProducts = () => {
+            const activeEmptyFilter = document.querySelector('.filter-btn.active[data-empty="true"]');
+            const activeMenu = document.querySelector('.filter-btn.active[data-menu-id]');
+            if (activeMenu) {
+                renderProducts(getMenuProducts(activeMenu.dataset.menuId));
+                return;
+            }
+            renderProducts(activeEmptyFilter && !searchInput.value.trim() ? [] : filterAndSortProducts(searchInput.value));
+        };
+
+        const fetchProducts = async () => {
+            if (isRefreshing) return;
+            isRefreshing = true;
+
+            try {
+                loader.style.display = 'flex';
+                allProducts = await parseCsvProducts();
+                renderCurrentProducts();
+                showRefreshSuccess();
+            } catch (error) {
+                console.error('Error loading CSV products:', error);
+                if (!allProducts.length) {
+                    try {
+                        allProducts = getFallbackProducts();
+                        renderCurrentProducts();
+                        showFallbackStatus();
+                    } catch (fallbackError) {
+                        console.error('Error loading fallback products:', fallbackError);
+                        showRefreshError();
+                        renderProducts([]);
+                    }
+                } else {
+                    showRefreshError();
+                }
+            } finally {
+                loader.style.display = 'none';
+                isRefreshing = false;
+            }
+        };
+
+        const filterAndSortProducts = (query) => {
+            query = query.replace(/area(\d+)/gi, 'area $1');
+            let filtered = [...allProducts];
+
+            if (query.trim()) {
+                let targetGB = null;
+                let nameQuery = query.toLowerCase();
+                
+                const gbMatch = nameQuery.match(/(\d+(?:\.\d+)?)\s*gb/);
+                if (gbMatch) {
+                    targetGB = parseFloat(gbMatch[1]);
+                    nameQuery = nameQuery.replace(gbMatch[0], ' ').trim();
+                } else {
+                    let tempQuery = nameQuery.replace(/area\s*\d+/g, ' '); 
+                    const numMatch = tempQuery.match(/(\d+(?:\.\d+)?)/);
+                    if (numMatch) {
+                        targetGB = parseFloat(numMatch[1]);
+                        nameQuery = nameQuery.replace(numMatch[0], ' ').trim();
+                    }
+                }
+
+                filtered = allProducts.filter(p => {
+                    const pName = (p.nama_produk || p.name || '').toLowerCase();
+                    const pCode = (p.kode_produk || p.code || '').toLowerCase();
+                    const pDesc = (p.deskripsi || p.desc || '').toLowerCase();
+                    const pAllocStr = p.quota_allocation ? (typeof p.quota_allocation === 'string' ? p.quota_allocation.toLowerCase() : JSON.stringify(p.quota_allocation).toLowerCase()) : '';
+
+                    let matchesName = true;
+                    if (nameQuery) {
+                        const searchWords = nameQuery.split(/\s+/).filter(w => w);
+                        matchesName = searchWords.every(word => {
+                            let matched = pName.includes(word) || 
+                                          pCode.includes(word) || 
+                                          pDesc.includes(word) || 
+                                          pAllocStr.includes(word);
+                            
+                            if (!matched && word === 'akrab' && (pCode.startsWith('xla') || pCode.startsWith('xda') || pCode.startsWith('xap') || pCode.startsWith('xlap'))) {
+                                matched = true;
+                            }
+                            if (!matched && word === 'xclp' && (pCode.startsWith('circle') || pName.includes('circle'))) {
+                                matched = true;
+                            }
+                            if (matched && word === 'xla' && pCode.startsWith('xlap')) {
+                                matched = false;
+                            }
+                            if (matched && word === 'fm' && pCode.startsWith('xdfm')) {
+                                matched = false;
+                            }
+                            return matched;
+                        });
+                    }
+
+                    let matchesGB = true;
+                    if (targetGB !== null) {
+                        const allProductGBs = [
+                            ...extractAllGB(pName),
+                            ...extractAllGB(pDesc),
+                            ...extractAllGB(pAllocStr)
+                        ];
+
+                        if (p.quota_allocation) {
+                            if (typeof p.quota_allocation === 'object') {
+                                Object.values(p.quota_allocation).forEach(val => {
+                                    allProductGBs.push(...extractAllNumbers(String(val)));
+                                });
+                            } else {
+                                allProductGBs.push(...extractAllNumbers(pAllocStr));
+                            }
+                        }
+
+                        if (allProductGBs.length > 0) {
+                            matchesGB = allProductGBs.some(gb => gb >= (targetGB - 2) && gb <= (targetGB + 2));
+                        } else {
+                            matchesGB = false;
+                        }
+                    }
+                    return matchesName && matchesGB;
+                });
+            }
+
+            filtered.sort((a, b) => {
+                const checkKosong = (item) => {
+                    const code = (item.kode_produk || item.code || '').toUpperCase();
+                    const provider = (item.kode_provider || item.brand || '').toUpperCase();
+                    const priceNum = item.harga_final || item.price || 0;
+                    
+                    const isXapZeroPrice = (code.startsWith('XAP') || provider === 'XAP') && Number(priceNum) === 0;
+                    const isXlapZeroSlot = code.startsWith('XLAP') && item.sisa_slot !== undefined && item.sisa_slot <= 0;
+                    const isZeroPrice = !priceNum || Number(priceNum) <= 0;
+                    
+                    let isGangguan = item.gangguan === 1 || isXapZeroPrice || isXlapZeroSlot || isZeroPrice;
+                    return item.kosong === 1 || isGangguan;
+                };
+
+                const isKosongA = checkKosong(a);
+                const isKosongB = checkKosong(b);
+
+                if (isKosongA && !isKosongB) return 1;
+                if (!isKosongA && isKosongB) return -1;
+
+                const getGroup = (item) => {
+                    const code = (item.kode_produk || item.code || '').toUpperCase();
+                    const name = (item.nama_produk || item.name || '').toUpperCase();
+                    if (name.includes('AKRAB')) return 1;
+                    if (code.startsWith('XLA') && !code.startsWith('XLAP')) return 2;
+                    if (code.startsWith('XDA')) return 3;
+                    if (code.startsWith('XLAP')) return 4;
+                    if (code.startsWith('XAP')) return 5;
+                    if (name.includes('CIRCLE') || code.startsWith('XCLP')) return 6;
+                    if (code.startsWith('XDFM')) return 7;
+                    if (code.startsWith('FM')) return 8;
+                    return 9;
+                };
+
+                const groupA = getGroup(a);
+                const groupB = getGroup(b);
+
+                if (groupA !== groupB) return groupA - groupB;
+
+                const priceA = a.harga_final || a.price || 0;
+                const priceB = b.harga_final || b.price || 0;
+                return priceA - priceB;
+            });
+
+            return filtered;
+        };
+
+        const renderProducts = (products) => {
+            productsGrid.innerHTML = '';
+            
+            if (products.length === 0) {
+                productsGrid.innerHTML = `
+                    <div class="no-results" style="grid-column: 1 / -1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; opacity: 0.5;">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <p style="margin: 0;">Tidak ada produk yang cocok dengan pencarian Anda.</p>
+                    </div>`;
+                resultsInfo.innerHTML = `<span>Menampilkan 0 produk</span>`;
+                return;
+            }
+
+            resultsInfo.innerHTML = `<span>Menampilkan <b>${products.length}</b> produk termurah</span>`;
+
+            products.forEach(p => {
+                const name = p.nama_produk || p.name || 'Tanpa Nama';
+                const code = p.kode_produk || p.code || '-';
+                const price = p.harga_final || p.price || 0;
+                
+                const provider = (p.kode_provider || p.brand || '').toUpperCase();
+                const codeUpper = code.toUpperCase();
+                const isXapZeroPrice = (codeUpper.startsWith('XAP') || provider === 'XAP') && Number(price) === 0;
+                const isXlapZeroSlot = codeUpper.startsWith('XLAP') && p.sisa_slot !== undefined && p.sisa_slot <= 0;
+                const isZeroPrice = !price || Number(price) <= 0;
+
+                let isGangguan = p.gangguan === 1 || isXapZeroPrice || isXlapZeroSlot || isZeroPrice;
+                let isKosong = p.kosong === 1 || isGangguan;
+                if ((codeUpper.startsWith('XDA') || codeUpper.startsWith('XAP') || codeUpper.startsWith('XLAP')) && p.sisa_slot !== undefined && p.sisa_slot <= 0) {
+                    isKosong = true;
+                }
+
+                const statusClass = (isKosong || isGangguan) ? 'status-empty' : 'status-available';
+                let statusText = isGangguan ? 'Gangguan' : (isKosong ? 'Kosong / Habis' : 'Tersedia');
+                
+                if (!isKosong && !isGangguan && p.static_product && p.sisa_slot !== undefined && p.sisa_slot !== null) {
+                    statusText = `${p.sisa_slot} Tersedia`;
+                }
+
+                const desc = p.deskripsi || p.desc || '';
+                let descHtml = '';
+                if (desc) {
+                    const lines = desc.split('\n').filter(l => l.trim().length > 0);
+                    descHtml = `<div class="product-desc">
+                        <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px; font-size:12px;">Detail Kuota:</div>
+                        ${lines.map(l => `<div style="display:flex; gap:6px;"><span style="color:var(--accent-primary)">&bull;</span><span>${escapeHtml(l)}</span></div>`).join('')}
+                    </div>`;
+                }
+
+                const alloc = p.quota_allocation;
+                let allocHtml = '';
+                if (alloc) {
+                    let items = '';
+                    if (typeof alloc === 'object') {
+                        Object.entries(alloc).forEach(([key, val]) => {
+                            items += `<div class="alloc-item"><span>${key}</span><span class="alloc-val">${val}</span></div>`;
+                        });
+                    } else if (typeof alloc === 'string') {
+                        items = `<div style="font-size:12px; color:var(--text-secondary);">${alloc}</div>`;
+                    }
+                    if (items) {
+                        allocHtml = `<div style="margin-top:8px;">
+                            <div style="font-weight:600; color:var(--text-primary); margin-bottom:6px; font-size:12px;">Alokasi Kuota:</div>
+                            <div class="product-alloc">${items}</div>
+                        </div>`;
+                    }
+                }
+
+                const urlParam = encodeURIComponent(code.replace('AKRAB-', '').replace('CIRCLE-', ''));
+                const targetUrl = code.startsWith('AKRAB-') ? `/akrab?cari=${urlParam}` : (code.startsWith('CIRCLE-') ? `/circle?cari=${urlParam}` : `/paket-data?cari=${urlParam}`);
+                
+                let btnHtml = isGangguan ? `<button class="btn-buy" disabled>Gangguan</button>` : (isKosong ? `<button class="btn-buy" disabled>Stok Habis</button>` : `<button class="btn-buy" onclick="window.location.href='${targetUrl}'">Beli Sekarang</button>`);
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div class="product-code">${code}</div>
+                        <div class="status-badge ${statusClass}">
+                            <div style="width: 6px; height: 6px; border-radius: 50%; background-color: currentColor;"></div>
+                            ${statusText}
+                        </div>
+                    </div>
+                    <div class="product-name">${name}</div>
+                    ${descHtml}
+                    ${allocHtml}
+                    <div class="product-price">${formatRupiah(price)}</div>
+                    ${btnHtml}
+                `;
+                productsGrid.appendChild(card);
+            });
+        };
+
+        searchInput.addEventListener('input', (e) => {
+            const filtered = filterAndSortProducts(e.target.value);
+            renderProducts(filtered);
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        });
+
+        quickFilters.addEventListener('click', (e) => {
+            const button = e.target.closest('.filter-btn');
+            if (!button) return;
+
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
+
+            const query = button.dataset.search || '';
+            searchInput.value = button.dataset.empty === 'true' ? '' : query;
+            if (button.dataset.menuId) {
+                renderProducts(getMenuProducts(button.dataset.menuId));
+                return;
+            }
+            renderProducts(filterAndSortProducts(query));
+        });
+
+        const initializePanel = async () => {
+            renderQuickFilters();
+            renderCurrentProducts();
+            await fetchProducts();
+            // Atur interval refresh ke 5 menit agar tidak memicu proteksi rate limiting proxy
+            setInterval(fetchProducts, 30000);
+        };
+
+        initializePanel();
+    </script>
+</body></html>
