@@ -234,6 +234,103 @@
             border: 1px dashed #cbd5e1;
         }
 
+        .order-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.42);
+            box-sizing: border-box;
+        }
+
+        .order-modal.is-open {
+            display: flex;
+        }
+
+        .order-modal-panel {
+            width: min(100%, 380px);
+            background: #ffffff;
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+            padding: 22px;
+            box-sizing: border-box;
+        }
+
+        .order-modal-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .order-modal-title {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .order-modal-close {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+            border: 1px solid #dbeafe;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .order-modal-product {
+            margin: 0 0 18px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .order-modal-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .order-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+
+        .order-link.whatsapp {
+            background: #16a34a;
+        }
+
+        .order-link.telegram {
+            background: #0284c7;
+        }
+
+        .order-copy-status {
+            min-height: 18px;
+            margin: 4px 0 0;
+            color: var(--text-secondary);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
         .product-desc {
             font-size: 13px;
             color: var(--text-secondary);
@@ -393,6 +490,21 @@
         <div class="products-grid" id="productsGrid"></div>
     </div>
 
+    <div class="order-modal" id="orderModal" aria-hidden="true">
+        <div class="order-modal-panel" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
+            <div class="order-modal-header">
+                <h2 class="order-modal-title" id="orderModalTitle">Pilih Order</h2>
+                <button class="order-modal-close" type="button" id="orderModalClose" aria-label="Tutup pop up">&times;</button>
+            </div>
+            <p class="order-modal-product">Produk: <strong id="orderProductName">-</strong></p>
+            <div class="order-modal-actions">
+                <a class="order-link whatsapp" id="orderWhatsapp" href="http://wa.me/6287815993913" target="_blank" rel="noopener">Order via WhatsApp</a>
+                <a class="order-link telegram" id="orderTelegram" href="http://t.me/frcell88" target="_blank" rel="noopener">Order via Telegram</a>
+            </div>
+            <p class="order-copy-status" id="orderCopyStatus"></p>
+        </div>
+    </div>
+
 <script>
         let allProducts = [];
         const searchInput = document.getElementById('searchInput') || document.createElement('input');
@@ -401,6 +513,12 @@
         const loader = document.getElementById('loader');
         const refreshStatus = document.getElementById('refreshStatus');
         const quickFilters = document.getElementById('quickFilters');
+        const orderModal = document.getElementById('orderModal');
+        const orderProductName = document.getElementById('orderProductName');
+        const orderWhatsapp = document.getElementById('orderWhatsapp');
+        const orderTelegram = document.getElementById('orderTelegram');
+        const orderModalClose = document.getElementById('orderModalClose');
+        const orderCopyStatus = document.getElementById('orderCopyStatus');
         const forceFallback = new URLSearchParams(window.location.search).has('fallback');
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR4CMSB_K37Dw0zTemanSPFDS-Z6wvgRRmfb1cBzfkNfRDwA6aXBPNHiy6qwRkPOdvDsa9ecwSli3ug/pub?gid=0&single=true&output=csv';
         const FALLBACK_CSV = `kode_produk,nama_produk,Deskripsi,stok_sekarang,harga
@@ -502,6 +620,45 @@ Area 4 : 123GB-125GB
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        };
+
+        let selectedOrderMessage = '';
+
+        const getOrderMessage = (productName) => {
+            return `Halo, saya ingin order produk: ${productName}`;
+        };
+
+        const openOrderModal = (productName) => {
+            const safeProductName = productName || 'Tanpa Nama';
+            selectedOrderMessage = getOrderMessage(safeProductName);
+            orderProductName.textContent = safeProductName;
+            orderWhatsapp.href = `http://wa.me/6287815993913?text=${encodeURIComponent(selectedOrderMessage)}`;
+            orderCopyStatus.textContent = '';
+            orderModal.classList.add('is-open');
+            orderModal.setAttribute('aria-hidden', 'false');
+            orderModalClose.focus();
+        };
+
+        const closeOrderModal = () => {
+            orderModal.classList.remove('is-open');
+            orderModal.setAttribute('aria-hidden', 'true');
+        };
+
+        const copyTelegramOrderMessage = () => {
+            if (!selectedOrderMessage) return;
+
+            if (!navigator.clipboard || !navigator.clipboard.writeText) {
+                orderCopyStatus.textContent = `Pesan order: ${selectedOrderMessage}`;
+                return;
+            }
+
+            navigator.clipboard.writeText(selectedOrderMessage)
+                .then(() => {
+                    orderCopyStatus.textContent = 'Pesan order sudah disalin. Tempel di chat Telegram.';
+                })
+                .catch(() => {
+                    orderCopyStatus.textContent = `Pesan order: ${selectedOrderMessage}`;
+                });
         };
 
         const getFirstValue = (row, keys) => {
@@ -955,22 +1112,19 @@ Area 4 : 123GB-125GB
                     }
                 }
 
-                const urlParam = encodeURIComponent(code.replace('AKRAB-', '').replace('CIRCLE-', ''));
-                const targetUrl = code.startsWith('AKRAB-') ? `/akrab?cari=${urlParam}` : (code.startsWith('CIRCLE-') ? `/circle?cari=${urlParam}` : `/paket-data?cari=${urlParam}`);
-                
-                let btnHtml = isGangguan ? `<button class="btn-buy" disabled>Gangguan</button>` : (isKosong ? `<button class="btn-buy" disabled>Stok Habis</button>` : `<button class="btn-buy" onclick="window.location.href='${targetUrl}'">Beli Sekarang</button>`);
+                let btnHtml = isGangguan ? `<button class="btn-buy" disabled>Gangguan</button>` : (isKosong ? `<button class="btn-buy" disabled>Stok Habis</button>` : `<button class="btn-buy js-order-product" type="button" data-product-name="${escapeHtml(name)}">Pilih Produk</button>`);
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div class="product-code">${code}</div>
+                        <div class="product-code">${escapeHtml(code)}</div>
                         <div class="status-badge ${statusClass}">
                             <div style="width: 6px; height: 6px; border-radius: 50%; background-color: currentColor;"></div>
                             ${statusText}
                         </div>
                     </div>
-                    <div class="product-name">${name}</div>
+                    <div class="product-name">${escapeHtml(name)}</div>
                     ${descHtml}
                     ${allocHtml}
                     <div class="product-price">${formatRupiah(price)}</div>
@@ -979,6 +1133,28 @@ Area 4 : 123GB-125GB
                 productsGrid.appendChild(card);
             });
         };
+
+        productsGrid.addEventListener('click', (e) => {
+            const button = e.target.closest('.js-order-product');
+            if (!button) return;
+            openOrderModal(button.dataset.productName || 'Tanpa Nama');
+        });
+
+        orderModalClose.addEventListener('click', closeOrderModal);
+
+        orderModal.addEventListener('click', (e) => {
+            if (e.target === orderModal) {
+                closeOrderModal();
+            }
+        });
+
+        orderTelegram.addEventListener('click', copyTelegramOrderMessage);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && orderModal.classList.contains('is-open')) {
+                closeOrderModal();
+            }
+        });
 
         searchInput.addEventListener('input', (e) => {
             const filtered = filterAndSortProducts(e.target.value);
