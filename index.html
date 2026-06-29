@@ -569,6 +569,74 @@
         .area-badge.area-2 { background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
         .area-badge.area-3 { background: rgba(217, 119, 6, 0.15); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.3); }
         .area-badge.area-4 { background: rgba(220, 38, 38, 0.15); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3); }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px 12px;
+            }
+
+            /* Make Cek Area table stack beautifully on mobile */
+            .kavion-table, 
+            .kavion-table tbody, 
+            .kavion-table tr, 
+            .kavion-table td {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .kavion-table thead {
+                display: none;
+            }
+
+            .kavion-table tr:not(.kavion-empty-row) {
+                padding: 16px;
+                border-bottom: 1px solid var(--glass-border);
+                display: grid;
+                grid-template-areas: 
+                    "prov badge"
+                    "cities cities";
+                grid-template-columns: 1fr auto;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .kavion-table tr.kavion-empty-row {
+                display: block;
+                padding: 0;
+            }
+
+            .kavion-table td {
+                padding: 0 !important;
+                border-bottom: none !important;
+            }
+
+            .kavion-table td[colspan="3"] {
+                padding: 30px 16px !important;
+            }
+
+            .kavion-prov {
+                grid-area: prov;
+                font-size: 15px;
+                font-weight: 700;
+                color: var(--text-primary);
+                white-space: normal;
+            }
+
+            .kavion-table tr td:last-child {
+                grid-area: badge;
+                justify-self: end;
+                display: flex;
+            }
+
+            .kavion-cities {
+                grid-area: cities;
+                font-size: 13.5px;
+                color: var(--text-secondary);
+                line-height: 1.5;
+                margin-top: 4px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1676,7 +1744,7 @@ Area 4 : 123GB-125GB
             
             if (filteredData.length === 0) {
                 tbody.innerHTML = `
-                    <tr>
+                    <tr class="kavion-empty-row">
                         <td colspan="3" style="text-align: center; color: var(--text-secondary); padding: 30px;">
                             Tidak ada data yang cocok dengan pencarian Anda.
                         </td>
