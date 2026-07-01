@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="5;url=https://www.konter-frcell.my.id">
+    <title>Web Pindah ke Domain Baru</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Kami Telah Pindah Alamat!</h1>
+        <p>Konter FR-Cell sekarang menggunakan domain baru.</p>
+        
+        <div class="box-notice">
+            <p>Kamu akan dialihkan otomatis ke <br>
+               <a href="https://www.konter-frcell.my.id"><strong>www.konter-frcell.my.id</strong></a> <br>
+               dalam <span id="countdown">5</span> detik.
+            </p>
+        </div>
+
+        <p class="small-text">Jika tidak beralih otomatis, silakan klik tombol di bawah ini:</p>
+        <a href="https://www.konter-frcell.my.id" class="btn-redirect">Ke Website Baru</a>
+    </div>
+
+    <script>
+        // Script untuk animasi hitung mundur 5 detik
+        let seconds = 5;
+        const countdownEl = document.getElementById('countdown');
+        
+        const interval = setInterval(() => {
+            seconds--;
+            countdownEl.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(interval);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
